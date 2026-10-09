@@ -1,0 +1,41 @@
+﻿node_modules/
+.venv/
+.env
+.env.*
+!.env.example
+
+# Local build outputs
+dist/
+build/
+.gradle/
+.DS_Store
+Thumbs.db
+
+# Signing keys and credentials
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+*.p8
+*.p12
+*.cer
+*.provisionprofile
+
+# Local IDE files
+.idea/
+.vscode/
+
+# Android build outputs
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+
+# iOS build outputs
+ios/App/build/
+ios/DerivedData/
+ios/Pods/
+
+# macOS files
+.AppleDouble
+.LSOverride

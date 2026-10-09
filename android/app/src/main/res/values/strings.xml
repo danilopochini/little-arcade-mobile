@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Little Arcade</string>
+    <string name="title_activity_main">Little Arcade</string>
+    <string name="package_name">com.danilopochini.littlearcade</string>
+    <string name="custom_url_scheme">com.danilopochini.littlearcade</string>
+</resources>
