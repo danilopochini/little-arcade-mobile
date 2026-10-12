@@ -380,3 +380,29 @@ h1 {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+.game-navigation {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.main-menu-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #e4d9c9;
+  border-radius: 999px;
+  background: #fffdf9;
+  color: #294b73;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(40, 35, 25, 0.08);
+}
+
+.main-menu-button:active {
+  transform: scale(0.98);
+}
