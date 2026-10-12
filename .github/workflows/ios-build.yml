@@ -69,4 +69,3 @@ jobs:
           name: ios-build-output
           path: build/DerivedData/Build/Products/Debug-iphonesimulator/
           if-no-files-found: ignore
-```
