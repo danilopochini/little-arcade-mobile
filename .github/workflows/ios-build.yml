@@ -1,3 +1,4 @@
+
 name: iOS Build Check
 
 on:
@@ -37,62 +38,67 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
-      - name: Build iPhone device app
+      - name: Archive iPhone app
         run: |
           xcodebuild \
             -project ios/App/App.xcodeproj \
             -scheme App \
             -sdk iphoneos \
             -configuration Release \
-            -derivedDataPath build/DerivedData \
+            -archivePath build/LittleArcade.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            archive
 
-      - name: Package and verify iPhone app as IPA
+      - name: Create export options
+        run: |
+          cat > build/ExportOptions.plist <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>ad-hoc</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>teamID</key>
+              <string></string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>com.danilopochini.littlearcade</key>
+                  <string></string>
+              </dict>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Export IPA
+        run: |
+          xcodebuild \
+            -exportArchive \
+            -archivePath build/LittleArcade.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist build/ExportOptions.plist
+
+      - name: Verify exported IPA
         run: |
           set -euo pipefail
 
-          APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/App.app"
-          IPA_DIR="build/ipa"
+          IPA_PATH="$(find build/export -maxdepth 1 -name '*.ipa' -print -quit)"
+          test -n "$IPA_PATH"
 
-          echo "Checking app bundle..."
-          test -d "$APP_PATH"
+          echo "IPA size:"
+          ls -lh "$IPA_PATH"
 
-          echo "App bundle size:"
-          du -sh "$APP_PATH"
+          echo "IPA contents:"
+          /usr/bin/unzip -l "$IPA_PATH" | head -40
 
-          echo "Checking app metadata..."
-          test -f "$APP_PATH/Info.plist"
+          /usr/bin/unzip -Z1 "$IPA_PATH" \
+            | grep -q '^Payload/[^/]*.app/Info.plist$'
 
-          echo "Bundle identifier:"
-          /usr/libexec/PlistBuddy \
-            -c "Print :CFBundleIdentifier" \
-            "$APP_PATH/Info.plist"
+          echo "IPA structure check passed."
 
-          echo "Executable name:"
-          /usr/libexec/PlistBuddy \
-            -c "Print :CFBundleExecutable" \
-            "$APP_PATH/Info.plist"
-
-          mkdir -p "$IPA_DIR/Payload"
-          cp -R "$APP_PATH" "$IPA_DIR/Payload/"
-
-          cd "$IPA_DIR"
-          /usr/bin/zip -qry LittleArcade.ipa Payload
-
-          echo "IPA file size:"
-          ls -lh LittleArcade.ipa
-
-          echo "Checking IPA contents..."
-          /usr/bin/unzip -l LittleArcade.ipa | head -40
-
-          /usr/bin/unzip -Z1 LittleArcade.ipa \
-            | grep -q '^Payload/App.app/Info.plist$'
-
-          /usr/bin/unzip -Z1 LittleArcade.ipa \
-            | grep -q '^Payload/App.app/'
-
-          echo "IPA structure checks passed."
+          mkdir -p build/ipa
+          cp "$IPA_PATH" build/ipa/LittleArcade.ipa
 
       - name: Upload iPhone IPA
         uses: actions/upload-artifact@v4
