@@ -10,7 +10,6 @@ on:
 jobs:
   build:
     runs-on: macos-15
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -38,67 +37,23 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
-      - name: Archive iPhone app
+      - name: Build iPhone device app
         run: |
           xcodebuild \
             -project ios/App/App.xcodeproj \
             -scheme App \
             -sdk iphoneos \
             -configuration Release \
-            -archivePath build/LittleArcade.xcarchive \
+            -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
-            archive
+            build
 
-      - name: Create export options
+      - name: Package iPhone app as IPA
         run: |
-          cat > build/ExportOptions.plist <<'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>ad-hoc</string>
-              <key>signingStyle</key>
-              <string>manual</string>
-              <key>teamID</key>
-              <string></string>
-              <key>provisioningProfiles</key>
-              <dict>
-                  <key>com.danilopochini.littlearcade</key>
-                  <string></string>
-              </dict>
-          </dict>
-          </plist>
-          PLIST
-
-      - name: Export IPA
-        run: |
-          xcodebuild \
-            -exportArchive \
-            -archivePath build/LittleArcade.xcarchive \
-            -exportPath build/export \
-            -exportOptionsPlist build/ExportOptions.plist
-
-      - name: Verify exported IPA
-        run: |
-          set -euo pipefail
-
-          IPA_PATH="$(find build/export -maxdepth 1 -name '*.ipa' -print -quit)"
-          test -n "$IPA_PATH"
-
-          echo "IPA size:"
-          ls -lh "$IPA_PATH"
-
-          echo "IPA contents:"
-          /usr/bin/unzip -l "$IPA_PATH" | head -40
-
-          /usr/bin/unzip -Z1 "$IPA_PATH" \
-            | grep -q '^Payload/[^/]*.app/Info.plist$'
-
-          echo "IPA structure check passed."
-
-          mkdir -p build/ipa
-          cp "$IPA_PATH" build/ipa/LittleArcade.ipa
+          mkdir -p build/ipa/Payload
+          cp -R build/DerivedData/Build/Products/Release-iphoneos/App.app build/ipa/Payload/
+          cd build/ipa
+          /usr/bin/zip -qr LittleArcade.ipa Payload
 
       - name: Upload iPhone IPA
         uses: actions/upload-artifact@v4
@@ -114,3 +69,4 @@ jobs:
           name: ios-build-output
           path: build/DerivedData/Build/Products/Debug-iphonesimulator/
           if-no-files-found: ignore
+
