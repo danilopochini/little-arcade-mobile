@@ -1,4 +1,3 @@
-
 name: iOS Build Check
 
 on:
@@ -10,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: macos-15
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -48,12 +48,51 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
-      - name: Package iPhone app as IPA
+      - name: Package and verify iPhone app as IPA
         run: |
-          mkdir -p build/ipa/Payload
-          cp -R build/DerivedData/Build/Products/Release-iphoneos/App.app build/ipa/Payload/
-          cd build/ipa
-          /usr/bin/zip -qr LittleArcade.ipa Payload
+          set -euo pipefail
+
+          APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/App.app"
+          IPA_DIR="build/ipa"
+
+          echo "Checking app bundle..."
+          test -d "$APP_PATH"
+
+          echo "App bundle size:"
+          du -sh "$APP_PATH"
+
+          echo "Checking app metadata..."
+          test -f "$APP_PATH/Info.plist"
+
+          echo "Bundle identifier:"
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleIdentifier" \
+            "$APP_PATH/Info.plist"
+
+          echo "Executable name:"
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleExecutable" \
+            "$APP_PATH/Info.plist"
+
+          mkdir -p "$IPA_DIR/Payload"
+          cp -R "$APP_PATH" "$IPA_DIR/Payload/"
+
+          cd "$IPA_DIR"
+          /usr/bin/zip -qry LittleArcade.ipa Payload
+
+          echo "IPA file size:"
+          ls -lh LittleArcade.ipa
+
+          echo "Checking IPA contents..."
+          /usr/bin/unzip -l LittleArcade.ipa | head -40
+
+          /usr/bin/unzip -Z1 LittleArcade.ipa \
+            | grep -q '^Payload/App.app/Info.plist$'
+
+          /usr/bin/unzip -Z1 LittleArcade.ipa \
+            | grep -q '^Payload/App.app/'
+
+          echo "IPA structure checks passed."
 
       - name: Upload iPhone IPA
         uses: actions/upload-artifact@v4
