@@ -24,7 +24,19 @@ jobs:
         run: npm ci
 
       - name: Sync Capacitor iOS
-        run: npx cap sync ios
+        run: |
+          npx cap sync ios
+
+          echo "App icon files after Capacitor sync:"
+          find ios/App/App/Assets.xcassets/AppIcon.appiconset \
+            -maxdepth 1 -type f -print
+
+          echo "App icon Contents.json after Capacitor sync:"
+          cat ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json
+
+          echo "Checking icon image dimensions:"
+          sips -g pixelWidth -g pixelHeight \
+            ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
 
       - name: Build iOS simulator app
         run: |
@@ -71,17 +83,12 @@ jobs:
             -c "Print :CFBundleIdentifier" \
             "$APP_PATH/Info.plist"
 
-          echo "Checking compiled asset catalogue for app icon entries..."
-          xcrun --find assetutil
+          echo "Checking compiled asset catalogue..."
           xcrun assetutil --info "$ASSETS" > build/asset-catalog.json
 
-          if grep -i -E 'AppIcon|Icon-1024|Icon-Marketing' build/asset-catalog.json; then
-            echo "Potential app icon entries found above."
-          else
-            echo "No obvious app icon names found; inspect the full asset catalogue."
-          fi
-
-          echo "Asset catalogue inspection complete."
+          echo "App icon-related asset entries:"
+          grep -i -E 'appicon|icon-marketing|icon-1024' \
+            build/asset-catalog.json || true
 
       - name: Package iPhone app as IPA
         run: |
