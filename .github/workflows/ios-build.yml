@@ -50,40 +50,38 @@ jobs:
 
       - name: Verify compiled app icon
         run: |
-          echo "Checking active Xcode icon settings..."
+          APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/App.app"
+          ASSETS="$APP_PATH/Assets.car"
 
+          echo "Checking active Xcode icon settings..."
           xcodebuild \
             -project ios/App/App.xcodeproj \
             -scheme App \
             -sdk iphoneos \
             -configuration Release \
             -showBuildSettings 2>/dev/null \
-            | grep -E 'ASSETCATALOG_COMPILER_APPICON_NAME|ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME' || true
+            | grep 'ASSETCATALOG_COMPILER_APPICON_NAME' || true
 
-          APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/App.app"
+          echo "Checking app bundle..."
+          test -d "$APP_PATH"
+          ls -lh "$ASSETS"
 
-          echo "Checking built app at: $APP_PATH"
-
-          if [ ! -d "$APP_PATH" ]; then
-            echo "ERROR: App bundle was not found"
-            exit 1
-          fi
-
-          if [ -f "$APP_PATH/Assets.car" ]; then
-            ls -lh "$APP_PATH/Assets.car"
-            echo "Asset catalogue exists."
-          else
-            echo "ERROR: Assets.car is missing"
-            exit 1
-          fi
-
+          echo "Checking bundle identifier..."
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleIdentifier" \
             "$APP_PATH/Info.plist"
 
-          /usr/libexec/PlistBuddy \
-            -c "Print :CFBundleIcons" \
-            "$APP_PATH/Info.plist" || true
+          echo "Checking compiled asset catalogue for app icon entries..."
+          xcrun --find assetutil
+          xcrun assetutil --info "$ASSETS" > build/asset-catalog.json
+
+          if grep -i -E 'AppIcon|Icon-1024|Icon-Marketing' build/asset-catalog.json; then
+            echo "Potential app icon entries found above."
+          else
+            echo "No obvious app icon names found; inspect the full asset catalogue."
+          fi
+
+          echo "Asset catalogue inspection complete."
 
       - name: Package iPhone app as IPA
         run: |
@@ -105,4 +103,12 @@ jobs:
         with:
           name: ios-build-output
           path: build/DerivedData/Build/Products/Debug-iphonesimulator/
+          if-no-files-found: ignore
+
+      - name: Upload asset catalogue inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: asset-catalog-inspection
+          path: build/asset-catalog.json
           if-no-files-found: ignore
