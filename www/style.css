@@ -380,3 +380,17 @@ h1 {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+.game-navigation {
+  margin-bottom: 16px;
+}
+
+.game-navigation .main-menu-button {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-sizing: border-box;
+}
