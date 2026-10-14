@@ -1,3 +1,8 @@
+.chess-page {
+  padding-top: calc(env(safe-area-inset-top, 0px) + clamp(2.5rem, 8vw, 4rem));
+  padding-bottom: 1rem;
+}
+
 .chess-game {
   width: min(100%, 680px);
 }
