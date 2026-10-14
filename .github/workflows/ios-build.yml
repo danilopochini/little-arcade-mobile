@@ -50,6 +50,16 @@ jobs:
 
       - name: Verify compiled app icon
         run: |
+          echo "Checking active Xcode icon settings..."
+
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -sdk iphoneos \
+            -configuration Release \
+            -showBuildSettings 2>/dev/null \
+            | grep -E 'ASSETCATALOG_COMPILER_APPICON_NAME|ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME' || true
+
           APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/App.app"
 
           echo "Checking built app at: $APP_PATH"
