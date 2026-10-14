@@ -48,6 +48,33 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Verify compiled app icon
+        run: |
+          APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/App.app"
+
+          echo "Checking built app at: $APP_PATH"
+
+          if [ ! -d "$APP_PATH" ]; then
+            echo "ERROR: App bundle was not found"
+            exit 1
+          fi
+
+          if [ -f "$APP_PATH/Assets.car" ]; then
+            ls -lh "$APP_PATH/Assets.car"
+            echo "Asset catalogue exists."
+          else
+            echo "ERROR: Assets.car is missing"
+            exit 1
+          fi
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleIdentifier" \
+            "$APP_PATH/Info.plist"
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleIcons" \
+            "$APP_PATH/Info.plist" || true
+
       - name: Package iPhone app as IPA
         run: |
           mkdir -p build/ipa/Payload
@@ -69,4 +96,3 @@ jobs:
           name: ios-build-output
           path: build/DerivedData/Build/Products/Debug-iphonesimulator/
           if-no-files-found: ignore
-
